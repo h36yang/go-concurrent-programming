@@ -16,4 +16,5 @@ Practice materials for "Concurrent Programming with Go" course
 * Coordinating tasks - `WaitGroups`
   * A `WaitGroup` waits for a collection of goroutines to finish.
 * Shared memory - `Mutexes`
-  * A `mutex` is a **mut**ual **ex**clusion lock.
+  * A `mutex` is a **mut**ual **ex**clusion lock to protect shared memory.
+* `Channels` can solve both challenges.
