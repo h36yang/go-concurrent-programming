@@ -22,28 +22,66 @@ The `sync` package (https://golang.org/pkg/sync) provides basic synchronization 
 
 ### Channels
 A `channel` is a typed conduit through which you can send and receive values. Channel allows goroutines to synchronize without explicit locks or condition variables in a loosely-coupled fashion.
-* Creating a Channel - `ch := make(chan int)`
-* Creating a Buffered Channel - `ch := make(chan int, 5)`
-* Closing a Channel - `close(ch)`
+* Creating a Channel
+  ```Go
+  ch := make(chan int)
+  ```
+* Creating a Buffered Channel
+  ```Go
+  ch := make(chan int, 5)
+  ```
+* Closing a Channel
+  ```Go
+  close(ch)
+  ```
 
 ### Channel Types
 Created channels are always bidirectional. The type can be restricted when the channel is passed into a function:
-* Bidirectional - `func myFunction(ch chan int) { ... }`
-* Send-only - `func myFunction(ch chan<- int) { ... }`
-* Receive-only - `func myFunction(ch <-chan int) { ... }`
+* Bidirectional
+  ```Go
+  func myFunction(ch chan int) {
+      // ch here is bidirectional
+      ch <- 23
+      fmt.Println(<-ch)
+  }
+  ```
+* Send-only
+  ```Go
+  func myFunction(ch chan<- int) {
+      // ch here is send-only
+      ch <- 23
+  }
+  ```
+* Receive-only
+  ```Go
+  func myFunction(ch <-chan int) {
+      // ch here is receive-only
+      fmt.Println(<-ch)
+  }
+  ```
 
 ### Working with Channels in Control Flows
-* If statements - `if msg, ok := <-ch; ok { ... }`
-* For loops - `for msg := range ch { ... }`
+* If statements
+  ```Go
+  if msg, ok := <-ch; ok {
+      // Enters here if channel is not closed, i.e. ok == true
+  }
+  ```
+* For loops
+  ```Go
+  for msg := range ch {
+      // Iterates until the channel is closed
+  }
+  ```
 * Select statements
   ```Go
   ch1 := make(chan int)
   ch2 := make(chan string)
   select {
   case i := <-ch1:
-      ...
+      // Enters here if ch1 has a message to be received
   case ch2 <- "hello":
-      ...
+      // Enters here if ch2 is ready for us to send a message
   default:
       // use default case for non-blocking select
   }
