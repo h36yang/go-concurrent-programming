@@ -61,5 +61,47 @@ func main() {
 		wg.Done()
 	}(ch3, wg)
 
+	/*
+	 * Using Channels with If Statements
+	 */
+	ch4 := make(chan int)
+	wg.Add(2)
+
+	go func(ch <-chan int, wg *sync.WaitGroup) {
+		// Only print the msg if channel is not closed
+		if msg, ok := <-ch; ok {
+			fmt.Println(msg, ok)
+		}
+		wg.Done()
+	}(ch4, wg)
+
+	go func(ch chan<- int, wg *sync.WaitGroup) {
+		close(ch)
+		wg.Done()
+	}(ch4, wg)
+
+	/*
+	 * Using Channels with For Loops
+	 */
+	ch5 := make(chan int)
+	wg.Add(2)
+
+	go func(ch <-chan int, wg *sync.WaitGroup) {
+		// Loop until the channel is closed
+		for msg := range ch {
+			fmt.Println(msg)
+		}
+		wg.Done()
+	}(ch5, wg)
+
+	go func(ch chan<- int, wg *sync.WaitGroup) {
+		for i := 0; i < 10; i++ {
+			ch <- i
+		}
+		// Must close the channel so the for loop on the receiver side knows when to exit
+		close(ch)
+		wg.Done()
+	}(ch5, wg)
+
 	wg.Wait()
 }

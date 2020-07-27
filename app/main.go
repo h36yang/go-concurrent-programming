@@ -15,6 +15,9 @@ func main() {
 	wg := &sync.WaitGroup{}
 	// Instantiate a pointer to a Read/Write Mutex
 	mx := &sync.RWMutex{}
+	// Instantiate channels
+	cacheCh := make(chan Book)
+	dbCh := make(chan Book)
 
 	for i := 0; i < 10; i++ {
 		id := rnd.Intn(10) + 1
@@ -22,23 +25,43 @@ func main() {
 		// Add 2 concurrent processes to the WaitGroup
 		wg.Add(2)
 
-		go func(id int, wg *sync.WaitGroup, mx *sync.RWMutex) {
+		go func(id int, wg *sync.WaitGroup, mx *sync.RWMutex, ch chan<- Book) {
 			if b, ok := queryCache(id, mx); ok {
-				fmt.Println("from cache")
-				fmt.Println(b)
+				// Send the Book object value to the cache channel
+				ch <- b
 			}
 			// Mark current Goroutine in the WaitGroup as done
 			wg.Done()
-		}(id, wg, mx)
+		}(id, wg, mx, cacheCh)
 
-		go func(id int, wg *sync.WaitGroup, mx *sync.RWMutex) {
-			if b, ok := queryDatabase(id, mx); ok {
+		go func(id int, wg *sync.WaitGroup, mx *sync.RWMutex, ch chan<- Book) {
+			if b, ok := queryDatabase(id); ok {
+				// Lock the resource for Write
+				// NOTE: Only a single Writer can access the resource at one time
+				mx.Lock()
+				cache[id] = b
+				// Unlock the resource for Write
+				mx.Unlock()
+				// Send the Book object value to the database channel
+				ch <- b
+			}
+			// Mark current Goroutine in the WaitGroup as done
+			wg.Done()
+		}(id, wg, mx, dbCh)
+
+		// Create one Goroutine per query to handle response
+		go func(cacheCh, dbCh <-chan Book) {
+			// Select statement to react to whichever case triggers faster
+			select {
+			case b := <-cacheCh:
+				fmt.Println("from cache")
+				fmt.Println(b)
+				<-dbCh // drain the msg from database channel so it doesn't trigger the second case
+			case b := <-dbCh:
 				fmt.Println("from database")
 				fmt.Println(b)
 			}
-			// Mark current Goroutine in the WaitGroup as done
-			wg.Done()
-		}(id, wg, mx)
+		}(cacheCh, dbCh)
 
 		time.Sleep(150 * time.Millisecond)
 	}
@@ -57,16 +80,10 @@ func queryCache(id int, mx *sync.RWMutex) (Book, bool) {
 	return b, ok
 }
 
-func queryDatabase(id int, mx *sync.RWMutex) (Book, bool) {
-	time.Sleep(100 * time.Millisecond)
+func queryDatabase(id int) (Book, bool) {
+	time.Sleep(100 * time.Millisecond) // sleep to fake the DB call
 	for _, b := range books {
 		if b.ID == id {
-			// Lock the resource for Write
-			// NOTE: Only a single Writer can access the resource at one time
-			mx.Lock()
-			cache[id] = b
-			// Unlock the resource for Write
-			mx.Unlock()
 			return b, true
 		}
 	}
