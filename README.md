@@ -18,3 +18,13 @@ Practice materials for "Concurrent Programming with Go" course
 * Shared memory - `Mutexes`
   * A `mutex` is a **mut**ual **ex**clusion lock to protect shared memory.
 * `Channels` can solve both challenges.
+
+### Creating Channels
+* Creating a Channel - `ch := make(chan int)`
+* Creating a Buffered Channel - `ch := make(chan int, 5)`
+
+### Channel Types
+Created channels are always bidirectional. The type can be restricted when the channel is passed into a function:
+* Bidirectional - `func myFunction(ch chan int) { ... }`
+* Send-only - `func myFunction(ch chan<- int) { ... }`
+* Receive-only - `func myFunction(ch <-chan int) { ... }`

@@ -43,5 +43,23 @@ func main() {
 		wg.Done()
 	}(ch2, wg)
 
+	/*
+	 * Send-only and Receive-only Channel Types
+	 */
+	ch3 := make(chan int)
+	wg.Add(2)
+
+	// This Goroutine can only receive message from the channel
+	go func(ch <-chan int, wg *sync.WaitGroup) {
+		fmt.Println(<-ch)
+		wg.Done()
+	}(ch3, wg)
+
+	// This Goroutine can only send message to the channel
+	go func(ch chan<- int, wg *sync.WaitGroup) {
+		ch <- 23
+		wg.Done()
+	}(ch3, wg)
+
 	wg.Wait()
 }
